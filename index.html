@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>JUST SQUARES</title>
     <meta name="description" content="This game is an Webgl FPS multiplayer game realised for learn Babylonjs!"/>
-    <!-- SCRIPTS DE BASE -->
-    <script src="http://www.babylonjs.com/babylon.js"></script>
+    <!-- SCRIPTS DE BASE
+    <script src="http://www.babylonjs.com/babylon.js"></script>-->
+    <script src="./js/vendor/babylon.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.1/pep.js"></script>
     <!-- FEUILLES CSS -->
     <link rel="stylesheet" type="text/css" href="css/mainStyle.css"/>
@@ -19,10 +20,5 @@
 <script src="js/Game.js"></script>
 <script src="js/Player.js"></script>
 <script src="js/Arena.js"></script>
-<script>
-  // Page entièrement chargé, on lance le jeu
-  document.addEventListener("DOMContentLoaded", function () {
-    new Game('renderCanvas');
-  }, false);
-</script>
+<script src="js/Weapons.js"></script>
 </html>
