@@ -16,13 +16,7 @@ Arena = function (game) {
   //light2.specular = new BABYLON.Color3(0,0,0)
   light2.intensity = 0.8
 
-  /*let light3 = new BABYLON.PointLight("Spot0", new BABYLON.Vector3(-40, 10, -100), scene)
-  light3.intensity = 0.3
-  light3.specular = new BABYLON.Color3(0,0,0)
 
-  let shadowGenerator1 = new BABYLON.ShadowGenerator(2048, light3)
-  shadowGenerator1.usePoissonSampling = true
-  shadowGenerator1.bias = 0.0005*/
   /**
    *
    * @type {BABYLON.StandardMaterial}
@@ -33,16 +27,37 @@ Arena = function (game) {
   materialGround.diffuseTexture.vScale = 8.0
 
   let materialWall = new BABYLON.StandardMaterial('groundTexture', scene)
-  materialWall.diffuseTexture = new BABYLON.Texture('assets/images/tile.jpg', scene)
+  materialWall.diffuseTexture = new BABYLON.Texture('assets/images/wood.jpg', scene)
+
+  let materialFloor = new BABYLON.StandardMaterial('floorTexture', scene)
+  materialFloor.diffuseTexture = new BABYLON.Texture('assets/images/brick.jpg', scene)
 
 
+  let multi = new BABYLON.MultiMaterial("nuggetman",scene);
+  multi.subMaterials.push(materialFloor);
+  multi.subMaterials.push(materialFloor);
+  multi.subMaterials.push(materialGround);
+  multi.subMaterials.push(materialGround);
+  multi.subMaterials.push(materialGround);
+  multi.subMaterials.push(materialGround);
   /**
    * Les objects
    * -
    * Le sol
    */
   let boxArena = BABYLON.Mesh.CreateBox('box1', 100, scene, false, BABYLON.Mesh.BACKSIDE)
-  boxArena.material = materialGround
+  /*boxArena.subMeshes=[]
+  let verticesCount=boxArena.getTotalVertices();
+
+  boxArena.subMeshes.push(new BABYLON.SubMesh(0, 0, verticesCount, 0, 6, boxArena));
+  boxArena.subMeshes.push(new BABYLON.SubMesh(1, 1, verticesCount, 6, 6, boxArena));
+  boxArena.subMeshes.push(new BABYLON.SubMesh(2, 2, verticesCount, 12, 6, boxArena));
+  boxArena.subMeshes.push(new BABYLON.SubMesh(3, 3, verticesCount, 18, 6, boxArena));
+  boxArena.subMeshes.push(new BABYLON.SubMesh(4, 4, verticesCount, 24, 6, boxArena));
+  boxArena.subMeshes.push(new BABYLON.SubMesh(5, 5, verticesCount, 30, 6, boxArena));*/
+
+
+  boxArena.material = multi //materialGround
   boxArena.position.y = 50 * 0.3
   boxArena.scaling.y = 0.3
   boxArena.scaling.z = 0.8

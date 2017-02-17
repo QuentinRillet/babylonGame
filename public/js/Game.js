@@ -1,7 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
-  new Game('renderCanvas')
-}, false)
-
 Game = function (canvasId) {
   let canvas = document.getElementById(canvasId)
   let engine = new BABYLON.Engine(canvas, true)
@@ -71,6 +67,8 @@ Game.prototype = {
   },
   renderRockets: function () {
     for (let i = 0; i < this._rockets.length; i++) {
+      // Les paramètres de la roquette
+      let paramsRocket = this._rockets[i].paramsRocket;
       let rayRocket = new BABYLON.Ray(this._rockets[i].position, this._rockets[i].direction)
 
       // On regarde quel est le premier objet qu'on touche
@@ -96,10 +94,18 @@ Game.prototype = {
           explosionRadius.computeWorldMatrix(true)
 
           // On fais un tour de bouche pour chaque joueur de la scène
+
           if (this._PlayerData.isAlive && this._PlayerData.camera.playerBox && explosionRadius.intersectsMesh(this._PlayerData.camera.playerBox)) {
-            // Envoie a la fonction d'affectation des dégats
-            this._PlayerData.getDamage(30)
+            // Envoi à la fonction d'affectation des dégâts
+            let whoDamage
+            if(this._rockets[i].owner){
+              whoDamage = this._rockets[i].owner
+            }else{
+              whoDamage = false
+            }
+            this._PlayerData.getDamage(paramsRocket.damage,whoDamage)
           }
+
 
           this._explosionRadius.push(explosionRadius);
         }
@@ -107,7 +113,7 @@ Game.prototype = {
         // On enlève de l'array _rockets le mesh numéro i (défini par la boucle)
         this._rockets.splice(i,1)
       } else {
-        let relativeSpeed = 1 / ((this.fps)/60)
+        let relativeSpeed = paramsRocket.ammos.rocketSpeed / ((this.fps)/60)
         this._rockets[i].position.addInPlace(this._rockets[i].direction.scale(relativeSpeed))
       }
     }
@@ -150,6 +156,64 @@ Game.prototype = {
       }
     }
   },
+  createGhostRocket : function(dataRocket) {
+    let positionRocket = dataRocket[0]
+    let rotationRocket = dataRocket[1]
+    let directionRocket = dataRocket[2]
+    let idPlayer = dataRocket[3]
+
+    newRocket = BABYLON.Mesh.CreateBox('rocket', 0.5, this.scene)
+
+    newRocket.scaling = new BABYLON.Vector3(1,0.7,2)
+
+    newRocket.direction = new BABYLON.Vector3(directionRocket.x,directionRocket.y,directionRocket.z)
+
+    newRocket.position = new BABYLON.Vector3(
+      positionRocket.x + (newRocket.direction.x * 1) ,
+      positionRocket.y + (newRocket.direction.y * 1) ,
+      positionRocket.z + (newRocket.direction.z * 1))
+    newRocket.rotation = new BABYLON.Vector3(rotationRocket.x,rotationRocket.y,rotationRocket.z)
+
+    newRocket.scaling = new BABYLON.Vector3(0.5,0.5,1)
+    newRocket.isPickable = false
+    newRocket.owner = idPlayer
+
+    newRocket.material = new BABYLON.StandardMaterial("textureWeapon", this.scene, false, BABYLON.Mesh.DOUBLESIDE)
+    newRocket.material.diffuseColor = this.armory.weapons[2].setup.colorMesh
+    newRocket.paramsRocket = this.armory.weapons[2].setup
+
+    game._rockets.push(newRocket)
+  },
+  createGhostLaser : function(dataRocket){
+    let position1 = dataRocket[0]
+    let position2 = dataRocket[1]
+    let idPlayer = dataRocket[2]
+
+    let line = BABYLON.Mesh.CreateLines("lines", [
+      position1,
+      position2
+    ], this.scene)
+    let colorLine = new BABYLON.Color3(Math.random(), Math.random(), Math.random())
+    line.color = colorLine
+    line.enableEdgesRendering()
+    line.isPickable = false
+    line.edgesWidth = 40.0
+    line.edgesColor = new BABYLON.Color4(colorLine.r, colorLine.g, colorLine.b, 1)
+    this._lasers.push(line)
+  },
+  displayScore(room){
+    if(room.length>=5){
+      let limitLoop = 4
+    }else{
+      let limitLoop = room.length-1
+    }
+    let indexName = 0
+    for (let i = 0; i <= limitLoop ; i++) {
+      document.getElementById('player'+indexName).innerText = room[i].name
+      document.getElementById('scorePlayer'+indexName).innerText = room[i].score
+      indexName++
+    }
+  }
 }
 
 /**

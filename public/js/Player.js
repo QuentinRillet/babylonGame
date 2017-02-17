@@ -3,6 +3,7 @@ Player = function(game) {
 
   // Si le tir est activée ou non
   this.weponShoot = false
+  this.ghostPlayers = []
   this.game = game
   // La vitesse de course du joueur
   this.speed = 1
@@ -11,6 +12,9 @@ Player = function(game) {
 
   // Axe de mouvement X et Z
   this.axisMovement = [false,false,false,false]
+
+  this.textHealth = document.getElementById('textHealth');
+  this.textArmor = document.getElementById('textArmor');
 
   window.addEventListener("keyup", function(evt) {
 
@@ -28,6 +32,11 @@ Player = function(game) {
         _this.camera.axisMovement[3] = false;
         break;
     }
+    let data={
+      axisMovement : _this.camera.axisMovement
+    };
+    _this.sendNewData(data)
+
   }, false)
 
   window.addEventListener("keydown", function(evt) {
@@ -45,6 +54,54 @@ Player = function(game) {
         _this.camera.axisMovement[3] = true;
         break;
     }
+    window.addEventListener("keyup", function(evt) {
+      if(evt.keyCode == 90 || evt.keyCode == 83 || evt.keyCode == 81 || evt.keyCode == 68 ){
+        switch(evt.keyCode){
+          case 90:
+            _this.camera.axisMovement[0] = false;
+            break;
+          case 83:
+            _this.camera.axisMovement[1] = false;
+            break;
+          case 81:
+            _this.camera.axisMovement[2] = false;
+            break;
+          case 68:
+            _this.camera.axisMovement[3] = false;
+            break;
+        }
+        let data = {
+          axisMovement : _this.camera.axisMovement
+        };
+        _this.sendNewData(data)
+
+      }
+    }, false)
+
+// Quand les touches sont relachées
+    window.addEventListener("keydown", function(evt) {
+      if(evt.keyCode == 90 || evt.keyCode == 83 || evt.keyCode == 81 || evt.keyCode == 68 ){
+        switch(evt.keyCode){
+          case 90:
+            _this.camera.axisMovement[0] = true;
+            break;
+          case 83:
+            _this.camera.axisMovement[1] = true;
+            break;
+          case 81:
+            _this.camera.axisMovement[2] = true;
+            break;
+          case 68:
+            _this.camera.axisMovement[3] = true;
+            break;
+        }
+        let data = {
+          axisMovement : _this.camera.axisMovement
+        }
+        _this.sendNewData(data)
+      }
+    }, false)
+
   }, false)
 
   window.addEventListener("mousemove", function(evt) {
@@ -55,6 +112,13 @@ Player = function(game) {
         _this.camera.playerBox.rotation.x += evt.movementY * 0.001 * (_this.angularSensibility / 250)
       }
     }
+
+    let data = {
+      rotation : _this.camera.playerBox.rotation
+    }
+
+    _this.sendNewData(data)
+
   }, false)
 
   let canvas = this.game.scene.getEngine().getRenderingCanvas()
@@ -135,6 +199,9 @@ Player.prototype = {
 
     this.camera.axisMovement = [false,false,false,false]
 
+    this.textHealth.innerText = this.camera.health
+    this.textArmor.innerText = this.camera.armor
+
     // On demande a la caméra de regarder au point zéro de la scène
     this.camera.setTarget(BABYLON.Vector3.Zero())
     this.game.scene.activeCamera = this.camera
@@ -168,41 +235,56 @@ Player.prototype = {
     document.addEventListener("mozpointerlockchange", pointerlockchange, false)
     document.addEventListener("webkitpointerlockchange", pointerlockchange, false)
   },
-  _checkMove : function (ratioFps) {
-    let relativeSpeed = this.speed / ratioFps;
-    if(this.camera.axisMovement[0]){
+  _checkMove : function(ratioFps){
+    // On bouge le player en lui attribuant la caméra
+    this._checkUniqueMove(ratioFps,this.camera)
+    for (let i = 0; i < this.ghostPlayers.length; i++) {
+      this._checkUniqueMove(ratioFps,this.ghostPlayers[i])
+    }
+  },
+  _checkUniqueMove : function (ratioFps, player) {
+    let relativeSpeed = this.speed / ratioFps
+    let playerSelected = player
+    let rotationPoint;
+    if(playerSelected.head){
+      rotationPoint = playerSelected.head.rotation;
+    }else{
+      rotationPoint = playerSelected.playerBox.rotation;
+    }
+
+    if(playerSelected.axisMovement[0]){
       forward = new BABYLON.Vector3(
-        parseFloat(Math.sin(parseFloat(this.camera.playerBox.rotation.y))) * relativeSpeed,
+        parseFloat(Math.sin(parseFloat(rotationPoint.y))) * relativeSpeed,
         0,
-        parseFloat(Math.cos(parseFloat(this.camera.playerBox.rotation.y))) * relativeSpeed
+        parseFloat(Math.cos(parseFloat(rotationPoint.y))) * relativeSpeed
       )
-      this.camera.playerBox.moveWithCollisions(forward)
+      playerSelected.playerBox.moveWithCollisions(forward)
     }
-    if(this.camera.axisMovement[1]){
+    if(playerSelected.axisMovement[1]){
       backward = new BABYLON.Vector3(
-        parseFloat(-Math.sin(parseFloat(this.camera.playerBox.rotation.y))) * relativeSpeed,
+        parseFloat(-Math.sin(parseFloat(rotationPoint.y))) * relativeSpeed,
         0,
-        parseFloat(-Math.cos(parseFloat(this.camera.playerBox.rotation.y))) * relativeSpeed
+        parseFloat(-Math.cos(parseFloat(rotationPoint.y))) * relativeSpeed
       )
-      this.camera.playerBox.moveWithCollisions(backward)
+      playerSelected.playerBox.moveWithCollisions(backward)
     }
-    if(this.camera.axisMovement[2]){
+    if(playerSelected.axisMovement[2]){
       left = new BABYLON.Vector3(
-        parseFloat(Math.sin(parseFloat(this.camera.playerBox.rotation.y) + degToRad(-90))) * relativeSpeed,
+        parseFloat(Math.sin(parseFloat(rotationPoint.y) + degToRad(-90))) * relativeSpeed,
         0,
-        parseFloat(Math.cos(parseFloat(this.camera.playerBox.rotation.y) + degToRad(-90))) * relativeSpeed
+        parseFloat(Math.cos(parseFloat(rotationPoint.y) + degToRad(-90))) * relativeSpeed
       )
-      this.camera.playerBox.moveWithCollisions(left)
+      playerSelected.playerBox.moveWithCollisions(left)
     }
-    if(this.camera.axisMovement[3]){
+    if(playerSelected.axisMovement[3]){
       right = new BABYLON.Vector3(
-        parseFloat(-Math.sin(parseFloat(this.camera.playerBox.rotation.y) + degToRad(-90))) * relativeSpeed,
+        parseFloat(-Math.sin(parseFloat(rotationPoint.y) + degToRad(-90))) * relativeSpeed,
         0,
-        parseFloat(-Math.cos(parseFloat(this.camera.playerBox.rotation.y) + degToRad(-90))) * relativeSpeed
+        parseFloat(-Math.cos(parseFloat(rotationPoint.y) + degToRad(-90))) * relativeSpeed
       )
-      this.camera.playerBox.moveWithCollisions(right)
+      playerSelected.playerBox.moveWithCollisions(right)
     }
-    this.camera.playerBox.moveWithCollisions(new BABYLON.Vector3(0,(-1.5) * relativeSpeed ,0))
+    playerSelected.playerBox.moveWithCollisions(new BABYLON.Vector3(0,(-1.5) * relativeSpeed ,0))
   },
   handleUserMouseDown: function () {
     if(this.isAlive === true){
@@ -214,7 +296,7 @@ Player.prototype = {
       this.camera.weapons.stopFire()
     }
   },
-  getDamage: function (damage) {
+  getDamage: function (damage, whoDamage) {
     let damageTaken = damage
     // Tampon des dégâts par l'armure
     if(this.camera.armor > Math.round(damageTaken/2)){
@@ -228,12 +310,22 @@ Player.prototype = {
     // Si le joueur i a encore de la vie
     if (this.camera.health > damageTaken) {
       this.camera.health -= damageTaken
+      if(this.camera.isMain){
+        this.textHealth.innerText = this.camera.health
+        this.textArmor.innerText = this.camera.armor
+      }
     } else {
-      this.playerDead()
+      if(this.camera.isMain){
+        this.textHealth.innerText = 0
+        this.textArmor.innerText = 0
+      }
+      this.playerDead(whoDamage)
       console.log('Vous êtes mort...')
     }
   },
-  playerDead: function () {
+  playerDead: function (whoKilled) {
+    sendPostMortem(whoKilled)
+
     this.deadCamera = new BABYLON.ArcRotateCamera("ArcRotateCamera",
       1, 0.8, 10, new BABYLON.Vector3(
         this.camera.playerBox.position.x,
@@ -247,18 +339,59 @@ Player.prototype = {
     this.camera.playerBox.dispose()
     // Suppression de la camera
     this.camera.dispose()
-    let inventoryWeapons = this.camera.weapons.inventory;
+
+    let inventoryWeapons = this.camera.weapons.inventory
     for (let i = 0; i < inventoryWeapons.length; i++) {
       inventoryWeapons[i].dispose()
     }
-    inventoryWeapons = [];
+    inventoryWeapons = []
     // On signale à Weapons que le joueur est mort
     this.isAlive = false
 
     let newPlayer = this
     let canvas = this.game.scene.getEngine().getRenderingCanvas()
     setTimeout(() => {
-      newPlayer._initCamera(newPlayer.game.scene, canvas)
+      newPlayer._initCamera(newPlayer.game.scene, canvas, newPlayer.spawnPoint)
+      newPlayer.launchRessurection()
     }, 4000)
+  },
+  sendNewData : function(data){
+    updateGhost(data)
+  },
+  launchRessurection : function(){
+    ressurectMe()
+  },
+  sendActualData : function(){
+    return {
+      actualTypeWeapon : this.camera.weapons.actualWeapon,
+      armor : this.camera.armor,
+      life : this.camera.health,
+      position  : this.camera.playerBox.position,
+      rotation : this.camera.playerBox.rotation,
+      axisMovement : this.camera.axisMovement
+    }
+  },
+  updateLocalGhost : function(data){
+    ghostPlayers = this.ghostPlayers
+
+    for (let i = 0; i < ghostPlayers.length; i++) {
+      if(ghostPlayers[i].idRoom === data.id){
+        let boxModified = ghostPlayers[i].playerBox
+        // On applique un correctif sur Y, qui semble être au mauvais endroit
+        if(data.position){
+          boxModified.position = new BABYLON.Vector3(data.position.x,data.position.y-2.76,data.position.z)
+        }
+        if(data.axisMovement){
+          ghostPlayers[i].axisMovement = data.axisMovement
+        }
+        if(data.rotation){
+          ghostPlayers[i].head.rotation.y = data.rotation.y
+        }
+        if(data.axisMovement){
+          ghostPlayers[i].axisMovement = data.axisMovement
+        }
+      }
+
+    }
   }
-};
+}

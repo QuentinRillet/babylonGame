@@ -41,7 +41,7 @@ Weapons = function(Player) {
 
 Weapons.prototype = {
   newWeapon: function (typeWeapon) {
-    let newWeapon;
+    let newWeapon
     for (let i = 0; i < this.Armory.weapons.length; i++) {
       if(this.Armory.weapons[i].name === typeWeapon){
         newWeapon = BABYLON.Mesh.CreateBox('rocketLauncher', 0.5, this.Player.game.scene)
@@ -132,6 +132,8 @@ Weapons.prototype = {
 
     newRocket.isPickable = false
 
+    sendGhostRocket(newRocket.position,newRocket.rotation,newRocket.direction)
+
     this.Player.game._rockets.push(newRocket)
   },
   shootBullet : function(meshFound) {
@@ -141,7 +143,8 @@ Weapons.prototype = {
     let setupWeapon = this.Armory.weapons[idWeapon].setup
 
     if (meshFound.hit && meshFound.pickedMesh.isPlayer) {
-      // On a touché un joueur
+      let damages = this.Armory.weapons[idWeapon].setup.damage
+      sendDamages(damages,meshFound.pickedMesh.name)
     } else {
       // L'arme ne touche pas de joueur
       console.log('Not Hit Bullet')
@@ -173,8 +176,12 @@ Weapons.prototype = {
       line.edgesWidth = 40.0
       line.edgesColor = new BABYLON.Color4(colorLine.r, colorLine.g, colorLine.b, 1)
       if (meshFound.pickedMesh.isPlayer) {
-        // On inflige des dégats au joueur
+        let damages = this.Armory.weapons[idWeapon].setup.damage
+        sendDamages(damages,meshFound.pickedMesh.name)
       }
+
+      sendGhostLaser(laserPosition,directionPoint.pickedPoint)
+
       this.Player.game._lasers.push(line)
     }
   },
@@ -187,7 +194,8 @@ Weapons.prototype = {
     if (meshFound.hit && meshFound.distance < setupWeapon.range*5 && meshFound.pickedMesh.isPlayer) {
       // On a touché un joueur
     } else {
-      // L'arme frappe dans le vide
+      let damages = this.Armory.weapons[idWeapon].setup.damage;
+      sendDamages(damages,meshFound.pickedMesh.name)
       console.log('Not Hit CaC')
     }
   },
