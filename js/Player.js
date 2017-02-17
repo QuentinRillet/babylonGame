@@ -1,16 +1,16 @@
 Player = function(game) {
-  let _this = this;
+  let _this = this
 
   // Si le tir est activée ou non
-  this.weponShoot = false;
-  this.game = game;
+  this.weponShoot = false
+  this.game = game
   // La vitesse de course du joueur
-  this.speed = 1;
+  this.speed = 1
   // La vitesse de mouvement
-  this.angularSensibility = 200;
+  this.angularSensibility = 200
 
   // Axe de mouvement X et Z
-  this.axisMovement = [false,false,false,false];
+  this.axisMovement = [false,false,false,false]
 
   window.addEventListener("keyup", function(evt) {
 
@@ -28,7 +28,7 @@ Player = function(game) {
         _this.camera.axisMovement[3] = false;
         break;
     }
-  }, false);
+  }, false)
 
   window.addEventListener("keydown", function(evt) {
     switch(evt.keyCode){
@@ -45,7 +45,7 @@ Player = function(game) {
         _this.camera.axisMovement[3] = true;
         break;
     }
-  }, false);
+  }, false)
 
   window.addEventListener("mousemove", function(evt) {
     if (_this.rotEngaged === true) {
@@ -55,9 +55,9 @@ Player = function(game) {
         _this.camera.playerBox.rotation.x += evt.movementY * 0.001 * (_this.angularSensibility / 250)
       }
     }
-  }, false);
+  }, false)
 
-  let canvas = this.game.scene.getEngine().getRenderingCanvas();
+  let canvas = this.game.scene.getEngine().getRenderingCanvas()
 
   canvas.addEventListener("mousedown", function(evt) {
 
@@ -65,14 +65,33 @@ Player = function(game) {
       _this.weponShoot = true;
       _this.handleUserMouseDown();
     }
-  }, false);
+  }, false)
 
   canvas.addEventListener("mouseup", function(evt) {
     if (_this.controlEnabled && _this.weponShoot) {
       _this.weponShoot = false;
       _this.handleUserMouseUp();
     }
-  }, false);
+  }, false)
+
+  // Changement des armes
+  this.previousWheeling = 0
+
+  canvas.addEventListener("mousewheel", function(evt) {
+    // Si la différence entre les deux tour de souris sont minime
+    if (Math.round(evt.timeStamp - _this.previousWheeling)>10) {
+      if(evt.deltaY<0){
+        // Si on scroll vers le haut, on va chercher l'arme suivante
+        _this.camera.weapons.nextWeapon(1)
+      } else {
+        // Si on scroll vers le haut, on va chercher l'arme précédente
+        _this.camera.weapons.nextWeapon(-1)
+      }
+      //On affecte a previousWheeling la valeur actuelle
+      _this.previousWheeling = evt.timeStamp
+    }
+
+  }, false)
 
   this._initCamera(this.game.scene, canvas)
 
@@ -92,13 +111,10 @@ Player.prototype = {
     // On dit que le spawnPoint est celui choisi selon le random plus haut
     this.spawnPoint = this.game.allSpawnPoints[randomPoint]
 
-
-
-
-    let playerBox = BABYLON.Mesh.CreateBox("headMainPlayer", 3, scene);
+    let playerBox = BABYLON.Mesh.CreateBox("headMainPlayer", 3, scene)
     playerBox.position = this.spawnPoint.clone()
-    playerBox.ellipsoid = new BABYLON.Vector3(2, 2, 2);
-
+    playerBox.ellipsoid = new BABYLON.Vector3(2, 2, 2)
+    playerBox.isPickable = false
 
     // On crée la caméra
     this.camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, 0), scene)
@@ -111,24 +127,23 @@ Player.prototype = {
 
     // Pour savoir que c'est le joueur principal
     this.camera.isMain = true;
-
-    // On demande a la caméra de regarder au point zéro de la scène
-    this.camera.setTarget(BABYLON.Vector3.Zero())
-    this.camera.axisMovement = [false,false,false,false]
-    this.game.scene.activeCamera = this.camera;
-
-    this.camera.weapons = new Weapons(this)
-
     this.isAlive = true;
     this.camera.health = 100
     this.camera.armor = 0
 
+    this.camera.weapons = new Weapons(this)
 
-    let hitBoxPlayer = BABYLON.Mesh.CreateBox("hitBoxPlayer", 3, scene);
-    hitBoxPlayer.parent = this.camera.playerBox;
-    hitBoxPlayer.scaling.y = 2;
-    hitBoxPlayer.isPickable = true;
-    hitBoxPlayer.isMain = true;
+    this.camera.axisMovement = [false,false,false,false]
+
+    // On demande a la caméra de regarder au point zéro de la scène
+    this.camera.setTarget(BABYLON.Vector3.Zero())
+    this.game.scene.activeCamera = this.camera
+
+    let hitBoxPlayer = BABYLON.Mesh.CreateBox("hitBoxPlayer", 3, scene)
+    hitBoxPlayer.parent = this.camera.playerBox
+    hitBoxPlayer.scaling.y = 2
+    hitBoxPlayer.isPickable = true
+    hitBoxPlayer.isMain = true
   },
   _initPointerLock: function () {
     let _this = this
@@ -232,13 +247,16 @@ Player.prototype = {
     this.camera.playerBox.dispose()
     // Suppression de la camera
     this.camera.dispose()
-    // Suppression de l'arme
-    this.camera.weapons.rocketLauncher.dispose()
+    let inventoryWeapons = this.camera.weapons.inventory;
+    for (let i = 0; i < inventoryWeapons.length; i++) {
+      inventoryWeapons[i].dispose()
+    }
+    inventoryWeapons = [];
     // On signale à Weapons que le joueur est mort
     this.isAlive = false
 
     let newPlayer = this
-    let canvas = this.game.scene.getEngine().getRenderingCanvas();
+    let canvas = this.game.scene.getEngine().getRenderingCanvas()
     setTimeout(() => {
       newPlayer._initCamera(newPlayer.game.scene, canvas)
     }, 4000)
